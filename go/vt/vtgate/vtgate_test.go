@@ -2266,6 +2266,33 @@ func TestVTGateShowMetadataUnsharded(t *testing.T) {
 	if !valuesContain(qr.Rows, "t1") {
 		t.Errorf("table %s not found in Values \n%+v", "t1", qr.Rows)
 	}
+
+	qr, err = rpcVTGate.Execute(context.Background(),
+		"show create databases",
+		nil,
+		"",
+		topodatapb.TabletType_MASTER,
+		nil,
+		false,
+		executeOptions)
+
+	expected = "vtgate: : unsupported show statement";
+	if err == nil || err.Error() != expected {
+		t.Errorf("wanted %s, got %v", expected, err)
+	}
+	qr, err = rpcVTGate.Execute(context.Background(),
+		"show tables",
+		nil,
+		"",
+		topodatapb.TabletType_MASTER,
+		nil,
+		false,
+		executeOptions)
+
+	expected = "vtgate: : unimplemented metadata query: show tables";
+	if err == nil || err.Error() != expected {
+		t.Errorf("wanted %s, got %v", expected, err)
+	}
 }
 
 func TestVTGateShowMetadataTwoShards(t *testing.T) {
