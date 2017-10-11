@@ -17,6 +17,7 @@ limitations under the License.
 package grpctmclient
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"sync"
@@ -83,9 +84,11 @@ func (client *Client) dial(tablet *topodatapb.Tablet) (*grpc.ClientConn, tabletm
 	if err != nil {
 		return nil, nil, err
 	}
-	cc, err := grpc.Dial(addr, opt)
+	opts := []grpc.DialOption{opt}
+	opts = append(opts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(*grpcutils.MaxMessageSize), grpc.MaxCallSendMsgSize(*grpcutils.MaxMessageSize)))
+	cc, err := grpc.Dial(addr, opts...)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.New(addr + ": " + err.Error())
 	}
 	return cc, tabletmanagerservicepb.NewTabletManagerClient(cc), nil
 }

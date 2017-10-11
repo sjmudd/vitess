@@ -17,6 +17,7 @@ limitations under the License.
 package grpctabletconn
 
 import (
+	"errors"
 	"flag"
 	"io"
 	"sync"
@@ -80,7 +81,7 @@ func DialTablet(tablet *topodatapb.Tablet, timeout time.Duration) (queryservice.
 	opts = append(opts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(*grpcutils.MaxMessageSize), grpc.MaxCallSendMsgSize(*grpcutils.MaxMessageSize)))
 	cc, err := grpc.Dial(addr, opts...)
 	if err != nil {
-		return nil, err
+		return nil, errors.New(addr + ": " + err.Error())
 	}
 	c := queryservicepb.NewQueryClient(cc)
 

@@ -17,6 +17,7 @@ limitations under the License.
 package grpcbinlogplayer
 
 import (
+	"errors"
 	"time"
 
 	"golang.org/x/net/context"
@@ -25,6 +26,7 @@ import (
 
 	"github.com/youtube/vitess/go/netutil"
 	"github.com/youtube/vitess/go/vt/binlog/binlogplayer"
+	"github.com/youtube/vitess/go/vt/servenv/grpcutils"
 
 	binlogdatapb "github.com/youtube/vitess/go/vt/proto/binlogdata"
 	binlogservicepb "github.com/youtube/vitess/go/vt/proto/binlogservice"
@@ -40,9 +42,13 @@ type client struct {
 func (client *client) Dial(tablet *topodatapb.Tablet, connTimeout time.Duration) error {
 	addr := netutil.JoinHostPort(tablet.Hostname, tablet.PortMap["grpc"])
 	var err error
-	client.cc, err = grpc.Dial(addr, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithTimeout(connTimeout))
+
+	opts := []grpc.DialOption{grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(*grpcutils.MaxMessageSize), grpc.MaxCallSendMsgSize(*grpcutils.MaxMessageSize))}
+	opts = append(opts, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithTimeout(connTimeout))
+
+	client.cc, err = grpc.Dial(addr, opts...)
 	if err != nil {
-		return err
+		return errors.New(addr + ": " + err.Error())
 	}
 	client.c = binlogservicepb.NewUpdateStreamClient(client.cc)
 	return nil
